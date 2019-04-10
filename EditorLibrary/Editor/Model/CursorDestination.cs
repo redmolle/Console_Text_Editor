@@ -2,7 +2,9 @@
 {
     public class CursorDestination
     {
-        public int? Position { get; set; }
+        private int? _position;
+
+        public int? Position { get { return _position.Value - 1; } set { _position = value; } }
         public string Word { get; set; }
     }
 }

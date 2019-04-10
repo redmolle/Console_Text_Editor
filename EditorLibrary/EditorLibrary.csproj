@@ -68,6 +68,7 @@
     <Compile Include="Editor\Model\CursorDestination.cs" />
     <Compile Include="Editor\Model\EditorElements.cs" />
     <Compile Include="Editor\Model\IElement.cs" />
+    <Compile Include="Editor\Model\IndexedWord.cs" />
     <Compile Include="Editor\Model\Text.cs" />
     <Compile Include="Except\BaseException.cs" />
     <Compile Include="Execution.cs" />

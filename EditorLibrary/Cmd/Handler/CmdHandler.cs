@@ -68,16 +68,26 @@ namespace EditorLibrary.Cmd
                     cmd = new Cursor
                     {
                         Name = matchCursor.Groups[1].Value,
-                        From = Convert.ToInt32(matchCursor.Groups[2].Value),
-                        Ahead = matchCursor.Groups[3].Value == "->",
-                        To = new CursorDestination
+                        Target = EditorHandler.GetTexts(matchCursor.Groups[2].Value).FirstOrDefault(),
+                        From = new CursorDestination
                         {
-                            Position = Regex.Match(matchCursor.Groups[4].Value, @"\d+").Success ?
-                            Convert.ToInt32(matchCursor.Groups[4].Value) :
+                            Position = Regex.Match(matchCursor.Groups[3].Value, @"\d+").Success ?
+                            Convert.ToInt32(matchCursor.Groups[3].Value) :
                             (int?)null,
 
-                            Word = Regex.Match(matchCursor.Groups[4].Value, @"\S+").Success ?
-                            matchCursor.Groups[4].Value :
+                            Word = Regex.Match(matchCursor.Groups[3].Value, @"\S+").Success ?
+                            matchCursor.Groups[3].Value :
+                            null,
+                        },
+                        Ahead = matchCursor.Groups[4].Value == "->",
+                        To = new CursorDestination
+                        {
+                            Position = Regex.Match(matchCursor.Groups[5].Value, @"\d+").Success ?
+                            Convert.ToInt32(matchCursor.Groups[5].Value) :
+                            (int?)null,
+
+                            Word = Regex.Match(matchCursor.Groups[5].Value, @"\S+").Success ?
+                            matchCursor.Groups[5].Value :
                             null,
                         }
                     }
@@ -128,7 +138,7 @@ namespace EditorLibrary.Cmd
 
         public static void Cursor(CursorCmd cmd)
         {
-
+            EditorHandler.AddCursor(cmd.cmd);
         }
 
         public static void Send(SendCmd cmd)

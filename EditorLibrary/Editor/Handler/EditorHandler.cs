@@ -50,7 +50,9 @@ namespace EditorLibrary.Editor
         {
             if (HasCursorNamed(c.Name))
                 throw new AlreadyContainsTextException(c.Name);
-            editor.Cursors.Add(c);
+
+
+            editor.Cursors.Add(SetCursorData(c));
         }
 
         public static List<Text> GetTexts(string name = null)
@@ -58,9 +60,13 @@ namespace EditorLibrary.Editor
             if (string.IsNullOrEmpty(name))
                 return editor.Texts;
             else
+            {
+                if (!HasCursorNamed(name))
+                    throw new NoSuchTextException(name);
                 return editor.Texts
                     .Where(w => w.Name == name)
                     .ToList();
+            }
         }
 
         public static List<Cursor> GetCursors(string name = null)
@@ -125,5 +131,106 @@ namespace EditorLibrary.Editor
                 .FirstOrDefault()
                 .Data = data;
         }
+        
+        private static Cursor SetCursorData(Cursor c)
+        {
+            if(c.From.Position == null)
+                c.From.Position = FindWord(c.Target.Data, c.From.Word)
+                    .OrderBy(o => o)
+                    .FirstOrDefault();
+
+            if (c.To.Position == null)
+                c.To.Position = FindWord(c.Target.Data, c.To.Word)
+                    .Where(w => c.Ahead ? w >= c.From.Position.Value : w <= c.From.Position.Value)
+                    .OrderBy(o => o)
+                    .FirstOrDefault();
+            else
+                c.To.Position = c.Ahead ? c.From.Position + c.To.Position :
+                    c.From.Position - c.To.Position;
+
+            if(c.From.Position.Value > c.To.Position.Value)
+            {
+                int tmp = c.From.Position.Value;
+                c.From.Position = c.To.Position.Value;
+                c.To.Position = tmp;
+            }
+
+            List<IndexedWord> text = GetNumeredWordsText(c.Target.Data);
+
+            c.From.Position = c.From.Position < 0 ? 0 : c.From.Position;
+            c.To.Position = c.To.Position > text.Count ? text.Count : c.To.Position;
+
+            int startIndex = text
+                .Where(w => w.Position == c.From.Position)
+                .Select(s => s.WhiteSpacePosition)
+                .FirstOrDefault();
+            int len = text
+                .Where(w => w.Position == c.To.Position)
+                .Select(s => s.WhiteSpacePosition)
+                .FirstOrDefault()
+                - startIndex;
+
+            c.Data = string.Concat(text.GetRange(startIndex, len));
+
+            //return GetNumeredWordsText(c.Target.Data)
+
+
+            //string[] wordsW = Regex.Split(c.Target.Data, @"(\s+)");
+            //string[] words = Regex.Split(c.Target.Data, @"\s+");
+            //int len = 0;
+            //for(int i = 0; i < wordsW.Length; i++)
+            //{
+            //if(!string.IsNullOrWhiteSpace(words[i]))
+            //{ }
+            //}
+            ////GetNumeredWordsText(c.Target.Data);
+
+            //c.Data = string.Concat(text.ToList());
+
+            return c;
+        }
+
+        private static List<int> FindWord(string text, string word)
+        {
+            List<int> indexes = new List<int>();
+            string[] words = Regex.Split(text, @"\s+");
+
+            for(int i = 0; i< words.Length; i++)
+            {
+                if (words[i] == word)
+                    indexes.Add(i);
+            }
+
+            return indexes.OrderBy(o => o).ToList();
+
+        }
+
+        private static List<IndexedWord> GetNumeredWordsText(string text)
+        {
+            List<IndexedWord> words = new List<IndexedWord>();
+
+            string[] wordsArray = Regex.Split(text, @"(\s+)");
+            int k = 0;
+
+            for (int i = 0; i < wordsArray.Length; i++)
+            {
+                int? pos = (int?)null;
+                if(!string.IsNullOrWhiteSpace(wordsArray[i]))
+                {
+                    pos = k;
+                    k++;
+                }
+
+                words.Add(new IndexedWord
+                {
+                    WhiteSpacePosition = i,
+                    Position = pos,
+                    Value = wordsArray[i]
+                });
+            }
+            return words;
+        }
+        
+
     }
 }
