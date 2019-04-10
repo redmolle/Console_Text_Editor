@@ -40,8 +40,11 @@ namespace EditorLibrary.Cmd
 
                 Input(new InputCmd
                 {
-                    name = matchInput.Groups[1].Value,
-                    data = matchInput.Groups[2]?.Value
+                    cmd = new Text
+                    {
+                        Name = matchInput.Groups[1].Value,
+                        Data = matchInput.Groups[2]?.Value
+                    }
                 });
 
             else if (matchFormat.Success)
@@ -51,7 +54,7 @@ namespace EditorLibrary.Cmd
                     name = matchFormat.Groups[1].Value,
                     separators = matchFormat.Groups.Count == 3 ?
                     Regex
-                    .Split(matchFormat.Groups[2].Value,"")
+                    .Split(matchFormat.Groups[2].Value, "")
                     .Where(w => !String.IsNullOrEmpty(w))
                     .ToArray() :
                     null
@@ -62,7 +65,22 @@ namespace EditorLibrary.Cmd
 
                 Cursor(new CursorCmd
                 {
+                    cmd = new Cursor
+                    {
+                        Name = matchCursor.Groups[1].Value,
+                        From = Convert.ToInt32(matchCursor.Groups[2].Value),
+                        Ahead = matchCursor.Groups[3].Value == "->",
+                        To = new CursorDestination
+                        {
+                            Position = Regex.Match(matchCursor.Groups[4].Value, @"\d+").Success ?
+                            Convert.ToInt32(matchCursor.Groups[4].Value) :
+                            (int?)null,
 
+                            Word = Regex.Match(matchCursor.Groups[4].Value, @"\S+").Success ?
+                            matchCursor.Groups[4].Value :
+                            null,
+                        }
+                    }
                 });
 
             else if (matchSend.Success)
@@ -93,18 +111,14 @@ namespace EditorLibrary.Cmd
 
         public static void Input(InputCmd cmd)
         {
-            if(string.IsNullOrEmpty(cmd.data))
+            if(string.IsNullOrEmpty(cmd.cmd.Data))
             {
-                string area = EditorHandler.GetTexts(cmd.name).Select(s => s.Data).FirstOrDefault();
-                TextView.Execute.ShowAreaWindow(cmd.name, area);
-                cmd.data = TextView.Execute.area;
+                string area = EditorHandler.GetTexts(cmd.cmd.Name).Select(s => s.Data).FirstOrDefault();
+                TextView.Execute.ShowAreaWindow(cmd.cmd.Name, area);
+                cmd.cmd.Data = TextView.Execute.area;
             }
 
-            EditorHandler.AddText(new Text
-            {
-                Name = cmd.name,
-                Data = cmd.data
-            });
+            EditorHandler.AddText(cmd.cmd);
         }
 
         public static void Format(FormatCmd cmd)

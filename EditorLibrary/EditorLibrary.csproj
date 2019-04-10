@@ -65,6 +65,7 @@
     <Compile Include="Editor\Except\Text\TextException.cs" />
     <Compile Include="Editor\Handler\EditorHandler.cs" />
     <Compile Include="Editor\Model\Cursor.cs" />
+    <Compile Include="Editor\Model\CursorDestination.cs" />
     <Compile Include="Editor\Model\EditorElements.cs" />
     <Compile Include="Editor\Model\IElement.cs" />
     <Compile Include="Editor\Model\Text.cs" />
