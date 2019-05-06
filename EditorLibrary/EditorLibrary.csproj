@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Cmd\Except\CmdException.cs" />
+    <Compile Include="Cmd\Except\MisstakeCmdException.cs" />
     <Compile Include="Cmd\Except\WrongCmdException.cs" />
     <Compile Include="Cmd\Handler\CmdHandler.cs" />
     <Compile Include="Cmd\Model\CmdList.cs" />

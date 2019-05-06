@@ -4,6 +4,8 @@ using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using EditorLibrary.Dict;
 using EditorLibrary.Editor;
+using System.Collections.Generic;
+using System.Reflection;
 
 namespace EditorLibrary.Cmd
 {
@@ -23,17 +25,86 @@ namespace EditorLibrary.Cmd
         private static bool IsExecutionEnd(string cmd)
         {
             return
-                Regex.Match(cmd, CmdDict.End, RegexOptions.IgnoreCase).Success;
+                Regex.Match(cmd, GetRegexCmd(CmdDict.End), RegexOptions.IgnoreCase).Success;
+        }
+
+        private static string GetRegexCmd(string cmd)
+        {
+            return $"^{cmd}$";
+        }
+
+        private static void CheckCmdMisstake(string cmd)
+        {
+            List<IndexedWord> words = EditorHandler.GetNumeredWordsText(cmd)
+            .Where(w => !string.IsNullOrWhiteSpace(w.Value))
+            .ToList();
+            List<IndexedWord> cmdWords = new List<IndexedWord>();
+            Type cmds = typeof(CmdDict);
+            string pName = string.Empty;
+            foreach(PropertyInfo p in cmds.GetProperties())
+            {
+                cmdWords = EditorHandler.GetNumeredWordsText(p.GetValue(cmds, null).ToString())
+                .Where(w => !string.IsNullOrWhiteSpace(w.Value))
+                .ToList();
+                
+                if(words[0].Value == cmdWords
+                .OrderBy(o => o.WhiteSpacePosition)
+                .Select(s => s.Value).FirstOrDefault())
+                {
+                     pName = p.Name;
+                    break;
+                }
+            }
+            if(string.IsNullOrEmpty(pName))
+            {
+                throw new WrongCmdException(cmd);
+            }
+
+            string expected = string.Empty, finded = string.Empty;
+            for(int i = 0; i < words.Count; i++)
+            {
+                cmdWords[i].Value = Regex.Replace(cmdWords[i].Value, @"(\?|\[|\]|\[ \])", "");
+                if (i > cmdWords.Count)
+                {
+                    expected = ExceptionMessageDict.EndLine;
+                    finded = words[i].Value;
+                    break;
+                }
+                else if(!Regex.IsMatch(words[i].Value,cmdWords[i].Value))
+                {
+                    switch(cmdWords[i].Value)
+                    {
+                        case "(\\S+)": expected = ExceptionMessageDict.word;
+                        break;
+                        case "(\\d+)" : expected = ExceptionMessageDict.number;
+                        break;
+                        case "(\\d+|\\S+)": expected = $"{ExceptionMessageDict.word} {ExceptionMessageDict.or} {ExceptionMessageDict.number}";
+                        break;
+                        case "(<-|->)": expected = ExceptionMessageDict.direction;
+                        break;
+                        case "(.+)": expected = ExceptionMessageDict.text;
+                        break;
+                        default: expected = cmdWords[i].Value;
+                        break;
+                    }
+                    finded = words[i].Value;
+                    break;
+                    //throw new MisstakeCmdException($"\"{cmd}\" {ExceptionMessageDict.Expected} {expected} {ExceptionMessageDict.Finded} {words[i].Value}");
+                }
+            }
+            throw new MisstakeCmdException($"\"{cmd}\" {ExceptionMessageDict.Expected} {expected} {ExceptionMessageDict.Finded} {finded}");
+
+
         }
 
         public static void Validate(string cmd)
         {
-            Match matchInput  = Regex.Match(cmd, CmdDict.Input, RegexOptions.IgnoreCase);
-            Match matchFormat = Regex.Match(cmd, CmdDict.Format, RegexOptions.IgnoreCase);
-            Match matchCursor = Regex.Match(cmd, CmdDict.Cursor, RegexOptions.IgnoreCase);
-            Match matchSend = Regex.Match(cmd,   CmdDict.Send, RegexOptions.IgnoreCase);
-            Match matchPrint = Regex.Match(cmd,  CmdDict.Print, RegexOptions.IgnoreCase);
-            Match matchEnd = Regex.Match(cmd, CmdDict.End, RegexOptions.IgnoreCase);
+            Match matchInput  = Regex.Match(cmd, GetRegexCmd(CmdDict.Input ), RegexOptions.IgnoreCase);
+            Match matchFormat = Regex.Match(cmd, GetRegexCmd(CmdDict.Format), RegexOptions.IgnoreCase);
+            Match matchCursor = Regex.Match(cmd, GetRegexCmd(CmdDict.Cursor), RegexOptions.IgnoreCase);
+            Match matchSend = Regex.Match(cmd,   GetRegexCmd(CmdDict.Send  ), RegexOptions.IgnoreCase);
+            Match matchPrint = Regex.Match(cmd,  GetRegexCmd(CmdDict.Print ), RegexOptions.IgnoreCase);
+            Match matchEnd = Regex.Match(cmd,    GetRegexCmd(CmdDict.End   ), RegexOptions.IgnoreCase);
 
 
             if (matchInput.Success)
@@ -110,8 +181,7 @@ namespace EditorLibrary.Cmd
                 });
 
             else
-
-                throw new WrongCmdException(cmd);
+                CheckCmdMisstake(cmd);
         }
 
         public static void Print(PrintCmd p)

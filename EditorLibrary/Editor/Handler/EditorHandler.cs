@@ -61,8 +61,8 @@ namespace EditorLibrary.Editor
                 return editor.Texts;
             else
             {
-                if (!HasCursorNamed(name))
-                    throw new NoSuchTextException(name);
+                //if (!HasTextNamed(name))
+                //    throw new NoSuchTextException(name);
                 return editor.Texts
                     .Where(w => w.Name == name)
                     .ToList();
@@ -205,7 +205,7 @@ namespace EditorLibrary.Editor
 
         }
 
-        private static List<IndexedWord> GetNumeredWordsText(string text)
+        public static List<IndexedWord> GetNumeredWordsText(string text)
         {
             List<IndexedWord> words = new List<IndexedWord>();
 

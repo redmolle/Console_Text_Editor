@@ -1,4 +1,5 @@
 ﻿using EditorLibrary.Cmd;
+using System.Collections.Generic;
 
 namespace EditorLibrary.Dict
 {
@@ -19,6 +20,7 @@ namespace EditorLibrary.Dict
             Send = c.Send;
             End = c.End;
             Print = c.Print;
+
         }
     }
 }
