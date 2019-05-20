@@ -13,8 +13,7 @@ namespace EditorLibrary.Cmd
     {
         public static bool Execute(string cmd)
         {
-            cmd = Regex.Replace(cmd, @"\s+", " ");
-
+            //cmd = ReformatCmd(cmd);
             if (IsExecutionEnd(cmd))
                 return false;
 
@@ -22,15 +21,21 @@ namespace EditorLibrary.Cmd
             return true;
         }
 
+        //private static string ReformatCmd(string cmd)
+        //{
+        //    MatchCollection matchCollection = Regex.Matches(cmd, @"[(\\d+|\\S+)|(<-|->)|(=)]", RegexOptions.IgnoreCase);
+        //    foreach(Match m in matchCollection)
+        //        for(int i = 0; i < m.Groups.Count; i++)
+        //            cmd = cmd.Replace(m.Groups[i].Value, $" {m.Groups[i].Value}");
+                
+        //    cmd = Regex.Replace(cmd, @"\s+", " ");
+        //    return cmd;
+        //}
+
         private static bool IsExecutionEnd(string cmd)
         {
             return
-                Regex.Match(cmd, GetRegexCmd(CmdDict.End), RegexOptions.IgnoreCase).Success;
-        }
-
-        private static string GetRegexCmd(string cmd)
-        {
-            return $"^{cmd}$";
+                Regex.Match(cmd, CmdDict.End, RegexOptions.IgnoreCase).Success;
         }
 
         private static void CheckCmdMisstake(string cmd)
@@ -42,8 +47,8 @@ namespace EditorLibrary.Cmd
             Type cmds = typeof(CmdDict);
             string pName = string.Empty;
             foreach(PropertyInfo p in cmds.GetProperties())
-            {
-                cmdWords = EditorHandler.GetNumeredWordsText(p.GetValue(cmds, null).ToString())
+            {                
+                cmdWords = EditorHandler.GetNumeredWordsText(Regex.Replace(p.GetValue(cmds, null).ToString(), @"(\^|\$)", ""))
                 .Where(w => !string.IsNullOrWhiteSpace(w.Value))
                 .ToList();
                 
@@ -61,32 +66,44 @@ namespace EditorLibrary.Cmd
             }
 
             string expected = string.Empty, finded = string.Empty;
-            for(int i = 0; i < words.Count; i++)
+            int max = words.Count > cmdWords.Count ? words.Count : cmdWords.Count;
+            for(int i = 0; i < max; i++)
             {
-                cmdWords[i].Value = Regex.Replace(cmdWords[i].Value, @"(\?|\[|\]|\[ \])", "");
                 if (i > cmdWords.Count)
                 {
                     expected = ExceptionMessageDict.EndLine;
                     finded = words[i].Value;
                     break;
                 }
-                else if(!Regex.IsMatch(words[i].Value,cmdWords[i].Value))
+                cmdWords[i].Value = Regex.Replace(cmdWords[i].Value, @"(\?|\[|\]|\[ \])", "");
+                switch (cmdWords[i].Value)
                 {
-                    switch(cmdWords[i].Value)
-                    {
-                        case "(\\S+)": expected = ExceptionMessageDict.word;
+                    case "(\\S+)":
+                        expected = ExceptionMessageDict.word;
                         break;
-                        case "(\\d+)" : expected = ExceptionMessageDict.number;
+                    case "(\\d+)":
+                        expected = ExceptionMessageDict.number;
                         break;
-                        case "(\\d+|\\S+)": expected = $"{ExceptionMessageDict.word} {ExceptionMessageDict.or} {ExceptionMessageDict.number}";
+                    case "(\\d+|\\S+)":
+                        expected = $"{ExceptionMessageDict.word} {ExceptionMessageDict.or} {ExceptionMessageDict.number}";
                         break;
-                        case "(<-|->)": expected = ExceptionMessageDict.direction;
+                    case "(<-|->)":
+                        expected = ExceptionMessageDict.direction;
                         break;
-                        case "(.+)": expected = ExceptionMessageDict.text;
+                    case "(.+)":
+                        expected = ExceptionMessageDict.text;
                         break;
-                        default: expected = cmdWords[i].Value;
+                    default:
+                        expected = cmdWords[i].Value;
                         break;
-                    }
+                }
+                if (i > words.Count)
+                {
+                        finded = ExceptionMessageDict.EndLine;
+                    break;
+                }
+                else if(!Regex.IsMatch(words[i].Value,cmdWords[i].Value) || ((cmdWords[i].Value == "(\\S+)" || cmdWords[i].Value == "(\\d+|\\S+)") && Regex.IsMatch(words[i].Value, @"(<-|->)")))
+                {
                     finded = words[i].Value;
                     break;
                     //throw new MisstakeCmdException($"\"{cmd}\" {ExceptionMessageDict.Expected} {expected} {ExceptionMessageDict.Finded} {words[i].Value}");
@@ -99,12 +116,12 @@ namespace EditorLibrary.Cmd
 
         public static void Validate(string cmd)
         {
-            Match matchInput  = Regex.Match(cmd, GetRegexCmd(CmdDict.Input ), RegexOptions.IgnoreCase);
-            Match matchFormat = Regex.Match(cmd, GetRegexCmd(CmdDict.Format), RegexOptions.IgnoreCase);
-            Match matchCursor = Regex.Match(cmd, GetRegexCmd(CmdDict.Cursor), RegexOptions.IgnoreCase);
-            Match matchSend = Regex.Match(cmd,   GetRegexCmd(CmdDict.Send  ), RegexOptions.IgnoreCase);
-            Match matchPrint = Regex.Match(cmd,  GetRegexCmd(CmdDict.Print ), RegexOptions.IgnoreCase);
-            Match matchEnd = Regex.Match(cmd,    GetRegexCmd(CmdDict.End   ), RegexOptions.IgnoreCase);
+            Match matchInput  = Regex.Match(cmd, CmdDict.Input , RegexOptions.IgnoreCase);
+            Match matchFormat = Regex.Match(cmd, CmdDict.Format, RegexOptions.IgnoreCase);
+            Match matchCursor = Regex.Match(cmd, CmdDict.Cursor, RegexOptions.IgnoreCase);
+            Match matchSend = Regex.Match(cmd,   CmdDict.Send  , RegexOptions.IgnoreCase);
+            Match matchPrint = Regex.Match(cmd,  CmdDict.Print , RegexOptions.IgnoreCase);
+            Match matchEnd = Regex.Match(cmd,    CmdDict.End   , RegexOptions.IgnoreCase);
 
 
             if (matchInput.Success)
@@ -139,10 +156,15 @@ namespace EditorLibrary.Cmd
                     cmd = new Cursor
                     {
                         Name = matchCursor.Groups[1].Value,
-                        Target = EditorHandler.GetTexts(matchCursor.Groups[2].Value).FirstOrDefault(),
+                        Target = EditorHandler.GetTexts(matchCursor.Groups[2].Value, true).FirstOrDefault(),
                         From = new CursorDestination
                         {
-                            Position = Regex.Match(matchCursor.Groups[3].Value, @"\d+").Success ?
+
+                            //Если число, то он ищет все равно как слово - Разобраться!!
+
+
+                            Position = Regex.IsMatch(matchCursor.Groups[3].Value, @"\d+") ?
+                            //Regex.Match(matchCursor.Groups[3].Value, @"\d+").Success ?
                             Convert.ToInt32(matchCursor.Groups[3].Value) :
                             (int?)null,
 
@@ -150,7 +172,7 @@ namespace EditorLibrary.Cmd
                             matchCursor.Groups[3].Value :
                             null,
                         },
-                        Ahead = matchCursor.Groups[4].Value == "->",
+                        Ahead = matchCursor.Groups[4].Value == "->",//TODO сделать правильно
                         To = new CursorDestination
                         {
                             Position = Regex.Match(matchCursor.Groups[5].Value, @"\d+").Success ?
@@ -169,7 +191,17 @@ namespace EditorLibrary.Cmd
                 Send(new SendCmd
                 {
                     SourceName = matchSend.Groups[1].Value,
-                    TargetName = matchSend.Groups[2].Value
+                    TargetName = matchSend.Groups[2].Value,
+                    After = new CursorDestination
+                    {
+                        Position = Regex.Match(matchSend.Groups[3].Value, @"\d+").Success ?
+                            Convert.ToInt32(matchSend.Groups[3].Value) :
+                            (int?)null,
+
+                        Word = Regex.Match(matchSend.Groups[3].Value, @"\S+").Success ?
+                            matchSend.Groups[3].Value :
+                            null,
+                    }
                 });
 
             else if (matchPrint.Success)
@@ -195,7 +227,7 @@ namespace EditorLibrary.Cmd
             {
                 string area = EditorHandler.GetTexts(cmd.cmd.Name).Select(s => s.Data).FirstOrDefault();
                 TextView.Execute.ShowAreaWindow(cmd.cmd.Name, area);
-                cmd.cmd.Data = TextView.Execute.area;
+                cmd.cmd.Data = TextView.Execute.area + " ";
             }
 
             EditorHandler.AddText(cmd.cmd);
@@ -213,7 +245,7 @@ namespace EditorLibrary.Cmd
 
         public static void Send(SendCmd cmd)
         {
-            EditorHandler.SendText(cmd.SourceName, cmd.TargetName);
+            EditorHandler.SendText(cmd.SourceName, cmd.TargetName, cmd.After);
         }
 
     }
