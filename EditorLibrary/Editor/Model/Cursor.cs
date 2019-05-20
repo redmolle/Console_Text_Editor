@@ -1,7 +1,5 @@
-﻿namespace EditorLibrary.Editor
-{
-    public class Cursor : IElement
-    {
+﻿namespace EditorLibrary.Editor {
+    public class Cursor : IElement {
         public string Name { get; set; }
         public Text Target { get; set; }
         public CursorDestination From { get; set; }

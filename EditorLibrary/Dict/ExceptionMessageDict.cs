@@ -18,7 +18,7 @@
         public static string or { get { return "или"; } }
         public static string direction { get { return $"стрелка <- {or} ->"; } }
         public static string text { get { return "текст"; } }
-        public static string EndLine {get{return "конец строки";}}
+        public static string EndLine { get { return "конец строки"; } }
 
     }
 }

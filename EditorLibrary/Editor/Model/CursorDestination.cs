@@ -1,7 +1,5 @@
-﻿namespace EditorLibrary.Editor
-{
-    public class CursorDestination
-    {
+﻿namespace EditorLibrary.Editor {
+    public class CursorDestination {
         public int? Position { get; set; }
 
         //public int? Position

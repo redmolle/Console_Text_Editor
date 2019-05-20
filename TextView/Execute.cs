@@ -4,15 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace TextView
-{
-    public static class Execute
-    {
+namespace TextView {
+    public static class Execute {
         public static string area { get; set; }
         private static Area AreaWindow { get; set; }
 
-        public static void ShowAreaWindow(string info, string text = null)
-        {
+        public static void ShowAreaWindow(string info, string text = null) {
             area = text ?? string.Empty;
 
             AreaWindow = new Area(info, area);
@@ -20,14 +17,11 @@ namespace TextView
 
         }
 
-        public static void Init()
-        {
+        public static void Init() {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
         }
 
-        private static void Main()
-        {
-        }
+        private static void Main() { }
     }
 }

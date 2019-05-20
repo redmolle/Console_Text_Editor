@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Windows.Forms;
 
-namespace TextView
-{
-    public partial class Area : Form
-    {
-        public Area(string info, string text)
-        {
+namespace TextView {
+    public partial class Area : Form {
+        public Area(string info, string text) {
             InitializeComponent();
 
             if (String.IsNullOrEmpty(text))
@@ -17,8 +14,7 @@ namespace TextView
             Data.Text = text;
         }
 
-        private void Area_FormClosing(object sender, FormClosingEventArgs e)
-        {
+        private void Area_FormClosing(object sender, FormClosingEventArgs e) {
             Execute.area = Data.Text;
         }
     }

@@ -1,10 +1,8 @@
-﻿using EditorLibrary.Cmd;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using EditorLibrary.Cmd;
 
-namespace EditorLibrary.Dict
-{
-    public static class CmdDict
-    {
+namespace EditorLibrary.Dict {
+    public static class CmdDict {
         public static string Input { get; set; }
         public static string Format { get; set; }
         public static string Cursor { get; set; }
@@ -12,8 +10,7 @@ namespace EditorLibrary.Dict
         public static string End { get; set; }
         public static string Print { get; set; }
 
-        public static void SetUp(CmdList c)
-        {
+        public static void SetUp(CmdList c) {
             Input = c.Input;
             Format = c.Format;
             Cursor = c.Cursor;

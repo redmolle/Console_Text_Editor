@@ -1,9 +1,7 @@
 ﻿using EditorLibrary.Dict;
 
-namespace EditorLibrary.Editor
-{
-    public class TextException : EditorException
-    {
+namespace EditorLibrary.Editor {
+    public class TextException : EditorException {
         protected string _message { get { return base._message; } }
 
         public override string Type { get { return ExceptionMessageDict.Text; } }
